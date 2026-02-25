@@ -17,12 +17,47 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch(path, { method = "GET", body, token, headers, ...rest } = {}) {
+const inflight = new Map(); // key -> Promise
+
+function stableKey({ url, method, authToken, body }) {
+  return `${method}:${url}:${authToken || ""}:${body ? JSON.stringify(body) : ""}`;
+}
+
+export async function apiFetch(path, { method = "GET", body, token, headers, timeoutMs = 20000, ...rest } = {}) {
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
   const authToken = token ?? getToken();
+  const upper = String(method || "GET").toUpperCase();
+
+  // Dedupe concurrent GETs so UI doesn't trigger multiple identical requests (helps on slow cold starts).
+  if (upper === "GET") {
+    const key = stableKey({ url, method: upper, authToken, body: undefined });
+    if (inflight.has(key)) return inflight.get(key);
+
+    const p = _apiFetchImpl(url, { method: upper, body: undefined, authToken, headers, timeoutMs, ...rest }).finally(
+      () => inflight.delete(key)
+    );
+    inflight.set(key, p);
+    return p;
+  }
+
+  return _apiFetchImpl(url, { method: upper, body, authToken, headers, timeoutMs, ...rest });
+}
+
+async function _apiFetchImpl(url, { method, body, authToken, headers, timeoutMs, ...rest }) {
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const t = timeoutMs
+    ? setTimeout(() => {
+        try {
+          controller?.abort();
+        } catch {
+          // ignore
+        }
+      }, timeoutMs)
+    : null;
 
   const res = await fetch(url, {
     method,
+    signal: controller?.signal,
     headers: {
       ...(body ? { "Content-Type": "application/json" } : {}),
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
@@ -30,6 +65,8 @@ export async function apiFetch(path, { method = "GET", body, token, headers, ...
     },
     body: body ? JSON.stringify(body) : undefined,
     ...rest,
+  }).finally(() => {
+    if (t) clearTimeout(t);
   });
 
   const contentType = res.headers.get("content-type") || "";

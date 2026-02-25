@@ -8,4 +8,41 @@ body {
   height: 100%;
 }
 
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    font-family: theme(fontFamily.sans);
+  }
+
+  body {
+    /* Use plain CSS here (not Tailwind @apply) so custom theme colors never break PostCSS builds */
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 55%, #eef2ff 100%);
+    @apply text-slate-900 antialiased;
+  }
+
+  ::selection {
+    background-color: #fde68a;
+    color: #0f172a;
+  }
+}
+
+@layer components {
+  .app-container {
+    @apply mx-auto max-w-6xl px-4;
+  }
+
+  .lux-h1 {
+    @apply font-serif text-3xl font-semibold tracking-tight text-slate-900;
+  }
+  .lux-h2 {
+    @apply font-serif text-2xl font-semibold tracking-tight text-slate-900;
+  }
+  .lux-subtitle {
+    @apply mt-2 text-sm text-slate-600 leading-relaxed;
+  }
+}
+
 

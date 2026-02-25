@@ -1,15 +1,21 @@
 import React from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import { Card, CardContent } from "../components/Card.jsx";
+import Button from "../components/Button.jsx";
 
 export default function HomePage() {
   const { isLoading, isAuthenticated, user } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border bg-white p-5 shadow-sm">
-        <div className="text-sm font-medium">Loading…</div>
-      </div>
+      <Card>
+        <CardContent>
+          <div className="h-4 w-32 animate-pulse rounded bg-slate-200/70" />
+          <div className="mt-3 h-3 w-64 animate-pulse rounded bg-slate-200/70" />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -23,17 +29,20 @@ export default function HomePage() {
         : "/client/projects";
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Welcome back</h1>
-        <p className="mt-2 text-sm text-slate-600">Choose where you want to go next.</p>
-      </div>
-      <Link
-        to={home}
-        className="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-      >
-        Go to your portal
-      </Link>
+    <div className="space-y-6">
+      <PageHeader title="Welcome back" subtitle="Choose where you want to go next." />
+
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="font-serif text-xl font-semibold tracking-tight">Your workspace</div>
+            <div className="mt-1 text-sm text-slate-600">Jump directly into the portal for your role.</div>
+          </div>
+          <Button as={Link} to={home} variant="gold">
+            Go to your portal
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
